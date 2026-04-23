@@ -1,31 +1,38 @@
 package repl
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 
 	"github.com/WedelFelix/Monkey-Lang-Interpreter-Go/lexer"
 	"github.com/WedelFelix/Monkey-Lang-Interpreter-Go/token"
+	"github.com/chzyer/readline"
 )
 
-const PROMPT = ">> "
+func Start() {
+	// Configure readline with a prompt and a history file
+	rl, err := readline.NewEx(&readline.Config{
+		Prompt:      ">> ",
+		HistoryFile: "/tmp/readline.tmp", // Enables persistent history
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer rl.Close()
 
-func Start(in io.Reader, out io.Writer) {
-	scanner := bufio.NewScanner(in)
 	for {
-		fmt.Fprintf(out, PROMPT)
-		scanned := scanner.Scan()
-
-		if !scanned {
-			return
+		line, err := rl.Readline()
+		if err != nil {
+			if err == readline.ErrInterrupt || err == io.EOF {
+				break // Exit on Ctrl+C or Ctrl+D
+			}
+			break
 		}
 
-		line := scanner.Text()
 		l := lexer.New(line)
-
+		fmt.Printf("Input: %s\n", line)
 		for tok := l.NextToken(); tok.Type != token.EOF; tok = l.NextToken() {
-			fmt.Fprintf(out, "%+v\n", tok)
+			fmt.Printf("%+v\n", tok)
 		}
 	}
 }
